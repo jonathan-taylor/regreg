@@ -530,7 +530,7 @@ Finally we can check that the two models gave the same coefficients
 
 .. nbplot::
 
-    >>> print np.linalg.norm(multinomial_coefs - logistic_coefs) / np.linalg.norm(logistic_coefs)
+    >>> print(np.linalg.norm(multinomial_coefs - logistic_coefs) / np.linalg.norm(logistic_coefs))
 
     6.35619142025e-16
 
@@ -1058,7 +1058,7 @@ group. The group LASSO penalty is
 .. nbplot::
 
     >>> groups = []
-    >>> for i in range(P/5):
+    >>> for i in range(int(np.rint(P/5))):
     ...     groups.extend([i]*5)
     >>> weights = dict([g, np.random.sample()+1] for g in np.unique(groups))
     >>> group_penalty = rr.group_lasso(groups, weights=weights, lagrange=1.)
