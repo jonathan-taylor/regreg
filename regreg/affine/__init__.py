@@ -753,8 +753,10 @@ class aslinear(linear_transform):
     def __init__(self, transform):
         self._transform = astransform(transform)
         self.affine_offset = None
-        self.input_shape = self._transform.output_shape
-        self.output_shape = self._transform.input_shape
+        # self.input_shape = self._transform.output_shape
+        # self.output_shape = self._transform.input_shape
+        self.input_shape = self._transform.input_shape
+        self.output_shape = self._transform.output_shape
 
     def linear_map(self, x):
         return self._transform.linear_map(x)
@@ -776,6 +778,8 @@ class adjoint(linear_transform):
         self.affine_offset = None
         self.input_shape = self.transform.output_shape
         self.output_shape = self.transform.input_shape
+        # self.input_shape = self.transform.input_shape
+        # self.output_shape = self.transform.output_shape
 
     def linear_map(self, x):
         return self.transform.adjoint_map(x)
@@ -847,6 +851,8 @@ class composition(affine_transform):
         self.transforms = [astransform(t) for t in transforms]
         self.input_shape = self.transforms[-1].input_shape
         self.output_shape = self.transforms[0].output_shape
+        
+        # if self.transforms[-1]
 
         # compute the affine_offset
         affine_offset = self.affine_map(np.zeros(self.input_shape))

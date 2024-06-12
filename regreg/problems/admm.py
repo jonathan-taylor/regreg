@@ -33,6 +33,9 @@ class admm_problem(object):
                  quadratic=None,
                  fit_args={}):
 
+        # if quadratic is None:
+        #     quadratic = identity_quadratic(0,0,0,0)
+
         (self.loss,
          self.atom,
          self.transform,
@@ -41,14 +44,14 @@ class admm_problem(object):
                             atom,
                             astransform(transform),
                             augmented_param,
-                            quadratic)
+                            identity_quadratic(0,0,0,0) if quadratic is None else quadratic)
 
         self.loss_coefs = self.loss.coefs                       # x in ADMM notes
         self.dual_coefs = np.zeros(self.transform.output_shape) # y in ADMM notes
         self.atom_coefs = np.zeros(self.transform.output_shape) # z in ADMM notes
         self.augmented_param = augmented_param                  # rho in ADMM notes
 
-        self.linear_transform = aslinear(self.transform)                # D
+        self.linear_transform = aslinear(self.transform)                # D; using transpose b/c for some reason returns transform.T
         qloss = quadratic_loss.squared_transform(self.linear_transform) # x^TD^TDx / 2
         qloss.coef *= self.augmented_param                              # scale by rho
         self.augmented_loss = smooth_sum([self.loss,
@@ -56,7 +59,7 @@ class admm_problem(object):
 
         self.fit_args = fit_args # for the smooth_sum FISTA run
 
-        assert (self.loss.shape == self.transform.output_shape)
+        # assert (self.loss.shape == self.transform.output_shape)
 
     def update_loss_coefs(self):
         """
@@ -68,7 +71,8 @@ class admm_problem(object):
                             self.transform.affine_offset)
         if alpha is None:
             alpha = 0
-        linear_term = self.linear_transform.dot(y - rho * (z - alpha))
+        # linear_term = self.linear_transform.dot(y - rho * (z - alpha))
+        linear_term = self.linear_transform.T.dot(y - rho * (z - alpha))
         self.loss_coefs[:] = self.augmented_loss.solve(quadratic=identity_quadratic(0, 0, linear_term, 0),
                                                        **self.fit_args)
 
@@ -89,9 +93,15 @@ class admm_problem(object):
         rho = self.augmented_param
         self.dual_coefs[:] += rho * (self.transform.affine_map(self.loss_coefs) - self.atom_coefs)
 
-    def solve(self, niter=20):
+    def solve(self, quadratic=None, niter=20):
+        if quadratic is None:
+            quadratic = identity_quadratic(0, 0, 0, 0)
+        oldq, self.quadratic = self.quadratic, self.quadratic + quadratic
+    
         for _ in range(niter):
             self.update_loss_coefs()
             self.update_atom_coefs()
             self.update_dual_coefs()
+
+        self.quadratic = oldq
 
